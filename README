@@ -2,4 +2,4 @@ This is Stattr, a statistics tracking web application specifically for competiti
 
 Be sure to modify your config file BEFORE installing. If you don't, it will install with the default options. Sorry, that's just how it is right now. We'll work on it.
 
-If you want more in-depth help, do please check out our start page at http://code.google.com/p/stattr/wiki/StartPage
+If you want more in-depth help, do please check out our start page at https://github.com/MarkTraceur/stattr/wiki.

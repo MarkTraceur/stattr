@@ -1,51 +1,42 @@
 * 0.x
 ** 0.0x
-*** DONE 0.01 
-    CLOSED: [2011-03-26]
-**** Initial implementation
-**** Support for posting and viewing results
-**** Users and admins
-**** Creating events
-
-*** DONE 0.02 
-    CLOSED: [2011-04-11]
-**** Flask implemented
-**** Cleaner code (PEP 8 followed more closely)
-**** SQL queries a little more careful
-**** Bugfix, frontend now logs you out if the server doesn't recognize you
-
+*** DONE 0.01
+    CLOSED: [2011-03-26 Sat 22:50]
+- Initial implementation
+- Support for posting and viewing results
+- Users and admins
+- Creating events
+*** DONE 0.02
+    CLOSED: [2011-04-11 Mon 19:13]
+- Flask implemented
+- Cleaner code (PEP 8 followed more closely)
+- SQL queries a little more careful
+- Bugfix, frontend now logs you out if the server doesn't recognize you
 *** DONE 0.03
-    CLOSED: [2011-04-12]
-**** mongodb implemented, postgresql removed
-**** fixed bug with booleans not appearing on the results page 
-**** changed database structure a lot to fit with mongodb
-**** changed client/server communication a little to make it less complex
-
+    CLOSED: [2011-04-12 Tue 22:11]
+- mongodb implemented, postgresql removed
+- fixed bug with booleans not appearing on the results page 
+- changed database structure a lot to fit with mongodb
+- changed client/server communication a little to make it less complex
 *** DONE 0.04
-    CLOSED: [2011-04-16]
-**** Users can be modified
-**** Events can be modified
-
+    CLOSED: [2011-04-16 Sat 13:27]
+- Users can be modified
+- Events can be modified
 *** DONE 0.05
-    CLOSED: [2011-04-17]
-**** Authentication refactored
-**** Made sure all methods that require auth (sensitive data and all) actually required auth
-**** Changed how frontend deals with authentication 
-
+    CLOSED: [2011-04-17 Sun 22:17]
+- Authentication refactored
+- Made sure all methods that require auth (sensitive data and all) actually required auth
+- Changed how frontend deals with authentication 
 *** TODO 0.06
-**** Client-side validation
-
+- Client-side validation
 ** 0.1x
 *** TODO 0.10
-**** User statistics
-**** Profile pages
-
+- User statistics
+- Profile pages
 *** TODO 0.11
-**** Statistics page for events
-
-** TODO 0.2x
+- Statistics page for events
+** 0.2x
 *** TODO 0.20
-**** Sort users by statistics
-
+- Sort users by statistics
 *** TODO 0.21
-**** Team groupings
+- Team groupings
