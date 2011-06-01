@@ -1,0 +1,11 @@
+* Features
+** TODO User statistics and profile page :0.10:
+** TODO Event averages and other statistical analyses for events :0.11:
+** TODO Sort players by various fields :0.20:
+** TODO Team groupings :0.21:
+** TODO Graphing
+** TODO Tournament structures
+* Modifications
+** TODO More client-side input validation :0.06:
+** TODO Different layout for event home pages
+** TODO Support for non-app-related web pages (custom HTML stuff)
