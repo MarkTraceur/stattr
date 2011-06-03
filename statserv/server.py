@@ -186,11 +186,11 @@ def start():
         wantresults = request.args.get('results', '')
         tblcol = database.stattrtbls
         eventcol = database[eventid]
-        tbldoc = tblcol.find_one({'id': eventid})
         if eventid == '':
             return send_error(request, 'need to know what event you '\
                                        'want to complete this request')
-        elif not tbldoc:
+        tbldoc = tblcol.find_one({'id': eventid})
+        if not tbldoc:
             return send_error(request, 'that event does not seem to exist....')
         del tbldoc['_id']
         resultlist = []
@@ -288,6 +288,9 @@ def start():
         officials = request.args.get('officials', '')
         descr = request.args.get('descr', '')
         eventid = request.args.get('id', '')
+        regexes = request.args.getlist('regexes')
+        froms = request.args.getlist('from')
+        tos = request.args.getlist('to')
         if activity == ''\
            or variables == []\
            or types == []\
@@ -307,7 +310,10 @@ def start():
                                         'descr': descr,
                                         'officials': officiallist,
                                         'fields': variables,
-                                        'types': types})
+                                        'types': types,
+                                        'checks': regexes,
+                                        'rstarts': froms,
+                                        'rends': tos})
             return make_response(request.args.get('callback', ''), {})
         else:
             return send_error(request,
@@ -393,6 +399,9 @@ def start():
         descr = request.args.get('descr', '')
         eventid = request.args.get('id', '')
         oldid = request.args.get('oldid', '')
+        regexes = request.args.getlist('regexes')
+        froms = request.args.getlist('from')
+        tos = request.args.getlist('to')
         if activity == ''\
            or variables == []\
            or types == []\
@@ -414,7 +423,10 @@ def start():
                                         'descr': descr,
                                         'officials': officiallist,
                                         'fields': variables,
-                                        'types': types})
+                                        'types': types,
+                                        'checks': regexes,
+                                        'rstarts': froms,
+                                        'rends': tos})
             if oldid != eventid:
                 for doc in database[oldid].find():
                     database[eventid].insert(doc)

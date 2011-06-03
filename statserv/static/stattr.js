@@ -279,24 +279,56 @@ function startStattr() {
         });
     }
 
+    function inputTypes() {
+	$this = $(this);
+	type = $this.val();
+	$fields = $this.closest('fieldset');
+	$char = $('.stattr-js-char-validity', $fields);
+	$val = $('.stattr-js-val-validity', $fields);
+	switch (type) {
+	    case 'bool':
+		$val.hide();
+		$char.hide();
+		break;
+	    case 'int':
+	    case 'double':
+		$val.show();
+		$char.hide();
+		break;
+	    case 'varchar':
+	    case 'text':
+		$val.hide();
+		$char.show();
+		break;
+	    default:
+		$val.hide();
+		$char.hide();
+		break;
+	}
+    }
+
     function createEvent() {
         stLoad('eventcreate');
         $varRepeat = $('fieldset.stattr-js-variable-repeater', stDat.$main);
+	$('.stattr-js-char-validity', $varRepeat).hide();
+	$('.stattr-js-val-validity', $varRepeat).hide();
         $varHtml = $varRepeat.clone();
+	$('.stattr-js-variable-type', $varRepeat).change(inputTypes);
 	$('a.stattr-js-variable-remove', stDat.$main).click(function() {
 		$(this).closest('fieldset').remove();
 		return 0;
 	    });
         $('a#stattr-js-variable-add', stDat.$main).click(function() {
-		$ourSet = $varHtml.clone();
-		$('a.stattr-js-variable-remove', $ourSet).click(function() {
-			$(this).closest('fieldset').remove();
-			return 0;
-		    });
-		$(this).before($ourSet);
+	    $ourSet = $varHtml.clone();
+	    $('.stattr-js-variable-type', $ourSet).change(inputTypes);
+	    $('a.stattr-js-variable-remove', $ourSet).click(function() {
+		$(this).closest('fieldset').remove();
 		return 0;
 	    });
-
+	    $(this).before($ourSet);
+	    return 0;
+	});
+	
         $('input#stattr-js-event-create-submit').click(function() {
             activity = $('input#stattr-js-event-create-activity', stDat.$main).val();
             officials = $('input#stattr-js-event-create-officials', stDat.$main).val();
@@ -304,13 +336,23 @@ function startStattr() {
             id = $('input#stattr-js-event-create-id', stDat.$main).val();
             variables = [];
             types = [];
+	    regexes = [];
+	    froms = [];
+	    tos = [];
             $('fieldset.stattr-js-variable-repeater', stDat.$main).each(function() {
-                identifier = $('input.stattr-js-variable-id', $(this)).val();
-                type = $('select.stattr-js-variable-type', $(this)).val();
+                $this = $(this);
+		identifier = $('input.stattr-js-variable-id', $this).val();
+                type = $('select.stattr-js-variable-type', $this).val();
+		regex = $('input.stattr-js-char-validation', $this).val();
+		from = $('input.stattr-js-val-validation-from', $this).val();
+		to = $('input.stattr-js-val-validation-to', $this).val();
                 variables.push(identifier);
                 types.push(type);
+		regexes.push(regex);
+		froms.push(from);
+		tos.push(to);
             });
-            stPost({'id': id, 'descr': descr, 'activity': activity, 'officials': officials, 'variables': variables, 'types': types}, 'event', function(data) {
+            stPost({'id': id, 'descr': descr, 'activity': activity, 'officials': officials, 'variables': variables, 'types': types, 'regexes': regexes, 'from': froms, 'to': tos}, 'event', function(data) {
                 if (data && !data.error) {
                     stDat.$error.html('Event created successfully.').delay(2000).empty();
                     stGet({}, 'events', homePage);
@@ -422,25 +464,33 @@ function startStattr() {
 
         $varRepeat = $('fieldset.stattr-js-variable-repeater', stDat.$main);
         $varHtml = $varRepeat.detach();
-
 	for (var i in data.table.fields) {
 	    if (data.table.fields[i] == 'participants')
 		continue;
 	    $ourClone = $varHtml.clone();
 	    $('input.stattr-js-variable-id', $ourClone).val(data.table.fields[i]);
 	    $('select.stattr-js-variable-type', $ourClone).val(data.table.types[i]);
+	    $('.stattr-js-char-validity', $ourClone).hide();
+	    $('.stattr-js-val-validity', $ourClone).hide();
+	    $('.stattr-js-variable-type', $ourClone).change(inputTypes);
+	    $('select.stattr-js-variable-type', $ourClone).change();
+	    $('.stattr-js-char-validation', $ourClone).val(data.table.checks[i-1]);
+	    $('.stattr-js-val-validation-from', $ourClone).val(data.table.rstarts[i-1]);
+	    $('.stattr-js-val-validation-to', $ourClone).val(data.table.rends[i-1]);
 	    $('a#stattr-js-variable-add').before($ourClone);
+	    $('.stattr-js-variable-type', $ourClone).change(inputTypes);
 	}
 
         $('a#stattr-js-variable-add', stDat.$main).click(function() {
-		$ourSet = $varHtml.clone();
-		$('a.stattr-js-variable-remove', $ourSet).click(function() {
-			$(this).closest('fieldset').remove();
-			return 0;
-		    });
-		$(this).before($ourSet);
+	    $ourSet = $varHtml.clone();
+	    $('.stattr-js-variable-type', $ourSet).change(inputTypes);
+	    $('a.stattr-js-variable-remove', $ourSet).click(function() {
+		$(this).closest('fieldset').remove();
 		return 0;
 	    });
+	    $(this).before($ourSet);
+	    return 0;
+	});
 
 	$('a.stattr-js-variable-remove', stDat.$main).click(function() {
 		$(this).closest('fieldset').remove();
@@ -454,13 +504,22 @@ function startStattr() {
             id = $('input#stattr-js-event-modify-id', stDat.$main).val();
             variables = [];
             types = [];
+	    regexes = [];
+	    froms = [];
+	    tos = [];
             $('fieldset.stattr-js-variable-repeater', stDat.$main).each(function() {
                 identifier = $('input.stattr-js-variable-id', $(this)).val();
                 type = $('select.stattr-js-variable-type', $(this)).val();
+		regex = $('input.stattr-js-char-validation', $this).val();
+		from = $('input.stattr-js-val-validation-from', $this).val();
+		to = $('input.stattr-js-val-validation-to', $this).val();
                 variables.push(identifier);
                 types.push(type);
+		regexes.push(regex);
+		froms.push(from);
+		tos.push(to);
             });
-            stPut({'oldid': data.table.id, 'id': id, 'descr': descr, 'activity': activity, 'officials': officials, 'variables': variables, 'types': types}, 'event', function(data) {
+            stPut({'oldid': data.table.id, 'id': id, 'descr': descr, 'activity': activity, 'officials': officials, 'variables': variables, 'types': types, 'regexes': regexes, 'from': froms, 'to': tos}, 'event', function(data) {
                 if (data && !data.error) {
                     stDat.$error.html('Event updated successfully.').delay(2000).empty();
                     stGet({}, 'events', chooseEvent);
@@ -599,6 +658,75 @@ function startStattr() {
     }
 
     function resultsAdd(eventId) {
+
+	function handleChange($inputele, eventinfo) { // Still inside of resultsAdd
+	    if ($inputele.attr('class') == 'stattr-js-competitor-name')
+		return true;
+	    value = $inputele.val();
+	    field = eventinfo.fields.indexOf($('span.stattr-js-variable-name', $inputele.closest('p.stattr-js-variable-repeater')).html());
+	    var typeregex = false;
+	    switch (eventinfo.types[field]) {
+		case 'bool':
+		    return true;
+		    break;
+		case 'int':
+		    typeregex = /[^0-9]/;
+		    break;
+		case 'double':
+		    typeregex = /[^0-9.]/;
+		    break;
+		case 'varchar':
+		case 'text':
+		    typeregex = /[\*\"\']/;
+		    break;
+		default:
+		    typeregex = false;
+	    }
+	    if (typeregex && typeregex.test(value)) {
+		stDat.$error.html('Error: Invalid characters for this type in input string');
+		window.setTimeout(function() {
+		    stDat.$error.empty();
+		}, 5000);
+		return false;
+	    }
+	    if (eventinfo.checks && eventinfo.checks[field-1] && eventinfo.checks[field-1] != '') {
+		customregex = eval(eventinfo.checks[field-1]);
+		if (typeof customregex.test != "function") {
+		    stDat.$error.html('Error: Regex is not regex, unsafe to continue.');
+		    window.setTimeout(function() {
+			stDat.$error.empty();
+		    }, 5000);
+		    return false;
+		}
+		if (customregex.test(value)) {
+		    stDat.$error.html('Error: Invalid characters in input string');
+		    window.setTimeout(function() {
+			stDat.$error.empty();
+		    }, 5000);
+		    return false;
+		}
+	    }
+	    if (eventinfo.rstarts && eventinfo.rstarts[field-1] && eventinfo.rstarts[field-1] != '') {
+		if (parseFloat(value) < parseFloat(eventinfo.rstarts[field-1])) {
+		    stDat.$error.html('Error: Value too low');
+		    window.setTimeout(function() {
+			stDat.$error.empty();
+		    }, 5000);
+		    return false;
+		}
+	    }
+	    if (eventinfo.rends && eventinfo.rends[field-1] && eventinfo.rends[field-1] != '') {
+		if (parseFloat(value) > parseFloat(eventinfo.rends[field-1])) {
+		    stDat.$error.html('Error: Value too high');
+		    window.setTimeout(function() {
+			stDat.$error.empty();
+		    }, 5000);
+		    return false;
+		}
+	    }
+	    return true;
+	}
+
         stLoad('resultsadd');
 
         $('span#stattr-js-results-event-name', stDat.$main).html(stDat.eventsList[eventId].activity + ': ' + stDat.eventsList[eventId].descr);
@@ -614,21 +742,37 @@ function startStattr() {
 		if (stDat.eventsList[eventId].types[i] == 'bool') {
 		    $thisVal.replaceWith($thisVal.clone().attr('type', 'checkbox'));
 		}
+		else if (stDat.eventsList[eventId].types[i] == 'text') {
+		    $thisVal.replaceWith(document.createElement('textarea'));
+		    $thisVal = $('textarea', $thisVar);
+		    $thisVal.addClass('.stattr-js-variable-value');
+		}
 		else {
 		    $thisVal.replaceWith($thisVal.clone().attr('type', 'text'));
 		}
 		$compet.append($thisVar);
 	    }
 	}
+
+	function respondToChange() {
+	    if (handleChange($(this), stDat.eventsList[eventId]))
+		stDat.$submit.removeAttr('disabled');
+	    else
+		stDat.$submit.attr('disabled', 'disabled');
+	}
 	
 	$compRe = $compet.clone();
+	stDat.$submit = $('input#stattr-js-results-submit', stDat.$main);
+	
+	$('input', stDat.$main).change(respondToChange);
+	$('textarea', stDat.$main).change(respondToChange);
 	
 	$('a#stattr-js-results-add-competitor', stDat.$main).click(function() {
 	    $compRe.clone().insertBefore($(this));
 	});
 
-	$('input#stattr-js-results-submit', stDat.$main).click(function() {
-		results = [];
+	stDat.$submit.click(function() {
+	    results = [];
 		for (var i in stDat.eventsList[eventId].fields) {
 		    results.push([]);
 		}
@@ -651,7 +795,7 @@ function startStattr() {
 			
 			else
 			    stDat.$error.html('No response from server, wtf?');
-		    });
-	    });
+		});
+	});
     }
 }

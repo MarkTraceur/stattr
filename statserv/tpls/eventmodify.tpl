@@ -20,6 +20,16 @@
 	    <option value="text">Longer string (a paragraph or more)</option>
 	  </select>
 	</p>
+	<p class="stattr-js-char-validity">
+	  Regex of disallowed characters: <input type="text" class="stattr-js-char-validation" /><br />WARNING: The above input field's contents will be evaluated in a JavaScript environment. A responsible admin will ONLY enter a valid regular expression, and nothing else. Don't put anything here that you don't fully understand!
+	</p>
+	<p class="stattr-js-val-validity">
+	  Range of valid values: <br />
+	  From
+	  <input type="text" style="width: 100px;" class="stattr-js-val-validation-from" />
+	  to
+	  <input type="text" style="width: 100px;" class="stattr-js-val-validation-to" />.
+	</p>
       </fieldset>
       <a href="javascript:" id="stattr-js-variable-add">Add another</a>
     </fieldset>
