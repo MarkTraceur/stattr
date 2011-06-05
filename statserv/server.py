@@ -252,6 +252,23 @@ def start():
         del dbuser['_id']
         return make_response(request.args.get('callback', ''), dbuser)
 
+    @stattr_server.route('/profile.json')
+    def get_profile():
+        username = request.args.get('username', '')
+        tablecol = database.stattrtbls
+        user = database.stattrusers.find_one({'username': username})
+        del user['_id']
+        del user['password']
+        data = {}
+        for table in tablecol.find({}):
+            data[table['id']] = []
+            thistbl = database[table['id']]
+            for result in thistbl.find({'participants': username}):
+                del result['_id']
+                data[table['id']].append(result)
+        return make_response(request.args.get('callback', ''),
+                             {'user': user, 'data': data})
+
     # -----------------
     # POST functions
     # -----------------
