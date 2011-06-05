@@ -3,3 +3,13 @@ This is Stattr, a statistics tracking web application specifically for competiti
 Be sure to modify your config file BEFORE installing. If you don't, it will install with the default options. Sorry, that's just how it is right now. We'll work on it.
 
 If you want more in-depth help, do please check out our start page at https://github.com/MarkTraceur/stattr/wiki.
+
+Below is a blurb to more clearly introduce you to the project, and to introduce me to you.
+
+  I'm Mark Holmquist, a computer science major at the University of Redlands. I've spent some time programming for the web and decided to put the skills to good use in the free software community.
+
+  Stattr is a web application built in Python on top of Flask that keeps track of competitive activities. Tournaments, competitive leagues, and single-shot competitions can all be tracked by one site, and each one can have multiple moderators and competitors (of course). The project started as a scratch-your-own-itch thing, because I wanted to keep track of how well my friends and I did at various things--specifically Smash Bros. and Ping Pong.
+
+  I see the project being mostly a pet-project thing for most people, getting set up once and used consistently thereafter to keep track of casual games or competitions between friends. I also hope to see fundraisers use it to track and publish their results, giving a more accessible method of accessing the results. The project will soon evolve into giving more statistics based on team groupings, individual users' progress, and so on. I'm also hoping to include graphs and sorting by various statistics.
+
+  Plus it's a cool bit of software and I really want people to help me get to be a better programmer, so I can better serve the community.
