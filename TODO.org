@@ -6,6 +6,7 @@
 ** TODO Graphing
 ** TODO Tournament structures
 * Modifications
-** TODO More client-side input validation :0.06:
+** DONE More client-side input validation :0.06:
+   CLOSED: [2011-06-05 Sun 02:32]
 ** TODO Different layout for event home pages
 ** TODO Support for non-app-related web pages (custom HTML stuff)
