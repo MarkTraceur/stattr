@@ -82,7 +82,8 @@ def start():
     database = Connection()[config['dbname']]
     tplList = ['home', 'header', 'login', 'userbar', 'admin',
                'eventcreate', 'eventhome', 'usercreate', 'resultsadd',
-               'userchoose', 'eventchoose', 'usermodify', 'eventmodify']
+               'userchoose', 'eventchoose', 'usermodify', 'eventmodify',
+               'profile']
     build_database(database, config)
     stattr_server = Flask(__name__)
 
@@ -182,13 +183,14 @@ def start():
         elif request.args.get('_method', '') == 'PUT':
             return mod_event(request)
         eventid = request.args.get('id', '')
+        if eventid == '':
+            return send_error(request, 'need to know what event you '\
+                                       'want to complete this request')
         pagenum = request.args.get('page', 0, type=int)
         wantresults = request.args.get('results', '')
         tblcol = database.stattrtbls
         eventcol = database[eventid]
-        if eventid == '':
-            return send_error(request, 'need to know what event you '\
-                                       'want to complete this request')
+
         tbldoc = tblcol.find_one({'id': eventid})
         if not tbldoc:
             return send_error(request, 'that event does not seem to exist....')
@@ -260,14 +262,22 @@ def start():
         del user['_id']
         del user['password']
         data = {}
+        fields = {}
         for table in tablecol.find({}):
             data[table['id']] = []
             thistbl = database[table['id']]
             for result in thistbl.find({'participants': username}):
                 del result['_id']
                 data[table['id']].append(result)
+            if len(data[table['id']]) == 0:
+                del data[table['id']]
+            else:
+                fields[table['id']] = {'types': table['types'],
+                                       'fields': table['fields'],
+                                       'activity': table['activity'],
+                                       'descr': table['descr']}
         return make_response(request.args.get('callback', ''),
-                             {'user': user, 'data': data})
+                             {'user': user, 'results': data, 'events': fields})
 
     # -----------------
     # POST functions

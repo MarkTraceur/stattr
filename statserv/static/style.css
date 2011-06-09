@@ -20,6 +20,11 @@
     font-style: italic;
 }
 
+.stattr-style-event-title {
+    font-size: 25;
+    font-weight: bold;
+}
+
 .stattr-style-right {
     float: right;
 }

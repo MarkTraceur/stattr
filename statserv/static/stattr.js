@@ -94,6 +94,17 @@ function startStattr() {
             stDat.$main.html(stDat.tpls[tpl]);
     }
 
+    function makeUserLink(username) {
+	$theLink = $(document.createElement('a'));
+	$theLink.addClass('stattr-style-user-link');
+	$theLink.html(username);
+	$theLink.attr('href', 'javascript:');
+	$theLink.click(function() {
+	    stGet({'username': username}, 'profile', userProfile);
+	});
+	return $theLink;
+    }
+
     function login(cb) {
         stLoad('login');
         $submit = $('input#stattr-js-login-submit');
@@ -141,6 +152,7 @@ function startStattr() {
     }
 
     function userbarSetup(data) {
+        stDat.$userbar.html(stDat.tpls.userbar);
         if (data && !data.error) {
             stDat.isAdmin = data.isAdmin;
         }
@@ -154,16 +166,16 @@ function startStattr() {
 	if (stDat.loggedIn) {
             stDat.$logger.attr('value', 'Logout');
             stDat.$logger.click(logout);
+            $('span#stattr-js-userbar-username').html(makeUserLink(stDat.username));
         }
 	else {
+            $('span#stattr-js-userbar-username').html(stDat.username);
 	    stDat.$logger.attr('value', 'Login');
 	    stDat.$logger.click(function() {
 		    login(homePage);
 		});
 	}
 
-        stDat.$userbar.html(stDat.tpls.userbar);
-        $('span#stattr-js-userbar-username').html(stDat.username);
         $('a#stattr-js-userbar-home-button', stDat.$userbar).click(function() {
             if (stDat.cfg && stDat.events)
                 homePage();
@@ -608,14 +620,7 @@ function startStattr() {
 	    fieldList = [];
 	    boolList = [];
 	    for (var field in data.events[h]) {
-		var isBool = true;
-		for (var r in data.events[h][field]) {
-		    if (typeof data.events[h][field][r] != 'boolean') {
-			isBool = false;
-			break;
-		    }
-		}
-		if (isBool)
+		if (data.table.types[data.table.fields.indexOf(field)] == 'bool')
 		    boolList.push(field);
 		else
 		    fieldList.push(field);
@@ -630,7 +635,10 @@ function startStattr() {
 		$ourTr.append($ourTd);
 		for (var j in data.events[h][fieldList[i]]) {
 		    $ourTd = $resClone.clone();
-		    $ourTd.html(data.events[h][fieldList[i]][j]);
+		    if (fieldList[i] == 'participants')
+			$ourTd.html(makeUserLink(data.events[h][fieldList[i]][j]));
+		    else
+			$ourTd.html(data.events[h][fieldList[i]][j]);
 		    $ourTr.append($ourTd);
 		}
 		$ourTable.append($ourTr);
@@ -645,7 +653,8 @@ function startStattr() {
 		$ourTd.attr('colspan', data.events[h].participants.length);
 		for (var j in data.events[h].participants) {
 		    if (data.events[h][boolList[i]][j] === true) {
-			$ourTd.append(data.events[h].participants[j] + ', ');
+			$ourTd.append(makeUserLink(data.events[h].participants[j]));
+			$ourTd.append(', ');
 		    }
 		}
 		tdStr = $ourTd.html();
@@ -658,7 +667,6 @@ function startStattr() {
     }
 
     function resultsAdd(eventId) {
-
 	function handleChange($inputele, eventinfo) { // Still inside of resultsAdd
 	    if ($inputele.attr('class') == 'stattr-js-competitor-name')
 		return true;
@@ -797,5 +805,113 @@ function startStattr() {
 			    stDat.$error.html('No response from server, wtf?');
 		});
 	});
+    }
+
+    function userProfile(data) {
+	stLoad('profile');
+	$userP = $('#stattr-js-user-name', stDat.$main);
+	$userP.html(data.user.username);
+	$boolRow = $('.stattr-js-bool-row', stDat.$main).detach();
+	$numRow = $('.stattr-js-number-row', stDat.$main).detach();
+	$strRow = $('.stattr-js-string-row', stDat.$main).detach();
+	$evSet = $('.stattr-js-user-event', stDat.$main).detach();
+	for (var event in data.results) {
+	    $thisSet = $evSet.clone();
+	    $thisTable = $('.stattr-js-stats-table', $thisSet);
+	    $('.stattr-js-event-title', $thisSet).html(data.events[event].activity);
+	    $('.stattr-js-event-descr', $thisSet).html(data.events[event].descr);
+	    for (var field in data.events[event].fields) {
+		var $thisRow = null;
+		thisType = data.events[event].types[field];
+		thisName = data.events[event].fields[field];
+		if (thisName == 'participants') {
+		    $.noop();
+		}
+		else if (thisType == 'bool') {
+		    $thisRow = $boolRow.clone();
+		    $('.stattr-js-var-name', $thisRow).html(thisName);
+		    count = 0;
+		    for (var i in data.results[event]) {
+			thisResult = data.results[event][i];
+			if (thisResult[thisName][thisResult.participants.indexOf(data.user.username)])
+			    count++;
+		    }
+		    truePercent = count / data.results[event].length * 100;
+		    $('.stattr-js-true-percent', $thisRow).html('True ' + truePercent + '% of the time');
+		    $('.stattr-js-false-percent', $thisRow).html('False ' + (100 - truePercent) + '% of the time');
+		}
+		else if (thisType == 'int' || thisType == 'double') {
+		    $thisRow = $numRow.clone();
+		    $('.stattr-js-var-name', $thisRow).html(thisName);
+		    sortedList = [];
+		    total = 0;
+		    var median, mean;
+		    for (var i in data.results[event]) {
+			thisResult = data.results[event][i];
+			number = thisResult[thisName][thisResult.participants.indexOf(data.user.username)];
+			total += number;
+			attempt = sortedList.length / 2;
+			attempt -= attempt % 1;
+			change = attempt / 2;
+			change -= change % 1;
+			while (1) {
+			    if (sortedList[attempt] > number)
+				attempt -= change;
+			    else if (sortedList[attempt] < number)
+				attempt += change;
+			    else
+				change = 0;
+			    if (change / 2 >= 1) {
+				change /= 2;
+				change -= change % 1;
+			    }
+			    else {
+				if (sortedList[attempt] > number)
+				    sortedList.splice(attempt, 0, number);
+				else
+				    sortedList.splice(attempt+1, 0, number);
+				break;
+			    }
+			}
+		    }
+		    if (sortedList.length % 2)
+			median = sortedList[(sortedList.length - 1) / 2];
+		    else {
+			center = (sortedList.length - 1) / 2;
+			median = (sortedList[center - 0.5] + sortedList[center + 0.5]) / 2;
+		    }
+		    $('.stattr-js-mean', $thisRow).html('Mean:<br />' + (total / sortedList.length));
+		    $('.stattr-js-median', $thisRow).html('Median:<br />' + median);
+		}
+		else if (thisType == 'varchar' || thisType == 'text') {
+		    $thisRow = $strRow.clone();
+		    $('.stattr-js-var-name', $thisRow).html(thisName);
+		    occurrences = {};
+		    order = [];
+		    for (var i in data.results[event]) {
+			thisResult = data.results[event][i];
+			thisStr = thisResult[thisName][thisResult.participants.indexOf(data.user.username)];
+			if (!occurrences[thisStr])
+			    occurrences[thisStr] = 1;
+			else
+			    occurrences[thisStr]++;
+		    }
+		    for (var i in occurrences) {
+			j = 0;
+			while (order[j] && occurrences[i] > occurrences[order[j]])
+			    j++;
+			if (j >= order.length)
+			    order.push(i);
+			else
+			    order.splice(j, 0, i);
+		    }
+		    $('.stattr-js-most-occurring', $thisRow).html('Most occurrences:<br />' + order[order.length - 1]);
+		    $('.stattr-js-least-occurring', $thisRow).html('Fewest occurrences:<br />' + order[0]);
+		}
+		if ($thisRow && $thisRow.length)
+		    $thisTable.append($thisRow);
+	    }
+	    $userP.after($thisSet);
+	}
     }
 }
