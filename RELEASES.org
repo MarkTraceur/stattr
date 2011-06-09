@@ -32,7 +32,8 @@
     CLOSED: [2011-06-03 Fri 15:46]
 - Client-side validation
 ** TODO 0.1x
-*** TODO 0.10
+*** DONE 0.10
+    CLOSED: [2011-06-08 Wed 21:39]
 - User statistics
 - Profile pages
 *** TODO 0.11
