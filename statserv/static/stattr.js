@@ -4,7 +4,7 @@ Copyright 2011 Mark Holmquist
 
 This file is part of stattr.
 
-1stattr is free software: you can redistribute it and/or modify
+stattr is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -20,12 +20,13 @@ along with stattr.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 function createCookie(name,value,hours) {
+    var expires;
     if (hours) {
         var date = new Date();
         date.setTime(date.getTime()+(hours*60*60*1000));
-        var expires = "; expires="+date.toGMTString();
+        expires = "; expires="+date.toGMTString();
     }
-    else var expires = "";
+    else expires = "";
     document.cookie = name+"="+value+expires+"; path=/";
 }
 
@@ -597,10 +598,151 @@ function startStattr() {
         $('p#stattr-js-event-home-activity', stDat.$main).html(data.table[1]);
         $('p#stattr-js-event-home-descr', stDat.$main).html(data.table[2]);
 
+	var fieldstats = {};
+	for (var h in data.events) {
+	    for (var i in data.events[h]) {
+		if (i == 'participants')
+		    continue;
+		var thisfield = data.events[h][i];
+		if (!fieldstats[i])
+		    fieldstats[i] = {};
+
+		var thistype = data.table.types[data.table.fields.indexOf(i)];
+
+		if (thistype == 'int' || thistype == 'double') {
+		    if (!fieldstats[i].total) {
+			fieldstats[i].total = 0;
+			fieldstats[i].order = [];
+			fieldstats[i].partics = [];
+		    }
+		    for (var j in thisfield) {
+			fieldstats[i].total += thisfield[j];
+			var cur = fieldstats[i].order.length / 2;
+			cur -= cur % 1;
+			var change = cur / 2;
+			change -= change % 1;
+			while (1) {
+			    if (fieldstats[i].order[cur] > thisfield[j])
+				cur -= change;
+			    else if (fieldstats[i].order[cur] < thisfield[j])
+				cur += change;
+			    else
+				change = 0;
+			    if (change / 2 >= 1) {
+				change /= 2;
+				change -= change % 1;
+			    }
+			    else {
+				if (fieldstats[i].order[cur] > thisfield[j]) {
+				    fieldstats[i].order.splice(cur, 0, thisfield[j]);
+				    fieldstats[i].partics.splice(cur, 0, data.events[h].participants[j]);
+				}
+				else {
+				    fieldstats[i].order.splice(cur+1, 0, thisfield[j]);
+				    fieldstats[i].partics.splice(cur+1, 0, data.events[h].participants[j]);
+				}
+				break;
+			    }
+			}
+		    }
+		}
+		else if (thistype == 'bool') {
+		    if (!fieldstats[i].truth) {
+			fieldstats[i].truth = 0;
+			fieldstats[i].falsity = 0;
+		    }
+		    for (var k in thisfield) {
+			if (thisfield[k] === true)
+			    fieldstats[i].truth++;
+			else
+			    fieldstats[i].falsity++;
+		    }
+		}
+		else if (thistype == 'text' || thistype == 'varchar') {
+		    if (!fieldstats[i].occurrences) {
+			fieldstats[i].indices = {};
+			fieldstats[i].occurrences = {};
+			fieldstats[i].order = [];
+		    }
+		    for (var l in thisfield) {
+			index = Crypto.SHA1(thisfield[l]);
+			if (!fieldstats[i].occurrences[index]) {
+			    fieldstats[i].occurrences[index] = 1;
+			    fieldstats[i].indices[index] = thisfield[l];
+			}
+			else
+			    fieldstats[i].occurrences[index]++;
+		    }
+		}
+	    }
+	}
+	$fieldCloner = $('.stattr-js-event-stat-repeater', stDat.$main).detach();
+	for (var m in fieldstats) {
+	    $thisClone = $fieldCloner.clone();
+	    $('.stattr-js-event-stat-header', $thisClone).html(m);
+	    $middle = $('.stattr-js-event-stat-repeater-average', $thisClone);
+	    $high = $('.stattr-js-event-stat-repeater-high', $thisClone);
+	    $low = $('.stattr-js-event-stat-repeater-low', $thisClone);
+	    thistype = data.table.types[data.table.fields.indexOf(m)];
+	    if (thistype == 'int' || thistype == 'double') {
+		fieldstats[m].mean = fieldstats[m].total / fieldstats[m].order.length;
+		length = fieldstats[m].order.length;
+		medpos = length / 2;
+		if (medpos % 1 != 0)
+		    fieldstats[m].median = (fieldstats[m].order[medpos - (medpos % 1)] + fieldstats[m].order[medpos + (1 - (medpos % 1))]) / 2;
+		else
+		    fieldstats[m].median = fieldstats[m].order[medpos];
+		$middle.html("Mean: " + fieldstats[m].mean + "<br />Median: " + fieldstats[m].median);
+		$low.html("Low: " + fieldstats[m].order[0] + '<br />By: ');
+		$low.append(makeUserLink(fieldstats[m].partics[0]));
+		$high.html("High: " + fieldstats[m].order[length - 1] + '<br /> By: ');
+		$high.append(makeUserLink(fieldstats[m].partics[length - 1]));
+	    }
+	    else if (thistype == 'text' || thistype == 'varchar') {
+		for (var occurrence in fieldstats[m].occurrences) {
+		    cur = fieldstats[m].order.length / 2;
+		    cur -= cur % 1;
+		    change = cur / 2;
+		    change -= change % 1;
+		    while (1) {
+			if (fieldstats[m].occurrences[fieldstats[m].order[cur]] > fieldstats[m].occurrences[occurrence])
+			    cur -= change;
+			else if (fieldstats[m].occurrences[fieldstats[m].order[cur]] < fieldstats[m].occurrences[occurrence])
+			    cur += change;
+			else
+			    change = 0;
+			if (change / 2 >= 1) {
+			    change /= 2;
+			    change -= change % 1;
+			}
+			else {
+			    if (fieldstats[m].occurrences[fieldstats[m].order[cur]] > fieldstats[m].occurrences[occurrence])
+				fieldstats[m].order.splice(cur, 0, occurrence);
+			    else
+				fieldstats[m].order.splice(cur+1, 0, occurrence);
+			    break;
+			}
+		    }
+		}
+		$middle.remove();
+		$high.html('Most frequent:<br />' + fieldstats[m].indices[fieldstats[m].order[fieldstats[m].order.length-1]]);
+		$low.html('Least frequent:<br />' + fieldstats[m].indices[fieldstats[m].order[0]]);
+		$high.attr('colspan', 2);
+	    }
+	    else if (thistype == 'bool') {
+		$middle.remove();
+		truthiness = 100 * (fieldstats[m].truth / (fieldstats[m].truth + fieldstats[m].falsity));
+		falsiness = 100 - truthiness;
+		$high.html('True ' + truthiness + '% of the time');
+		$low.html('False ' + falsiness + '% of the time');
+	    }
+	    $('#stattr-js-event-stats', stDat.$main).append($thisClone);
+	}
+
         var moderate = false;
 
-        for (var i in data.table.officials) {
-            if (stDat.username && stDat.username == data.table.officials[i]) {
+        for (var n in data.table.officials) {
+            if (stDat.username && stDat.username == data.table.officials[n]) {
                 moderate = true;
                 break;
             }
@@ -616,6 +758,7 @@ function startStattr() {
 
         $varClone = $('th.stattr-js-event-home-variable-repeater', stDat.$main).detach();
         $resultTable = $('table.stattr-js-event-home-results-table', stDat.$main).detach();
+	delete h;
         for (var h in data.events) {
 	    fieldList = [];
 	    boolList = [];
@@ -627,12 +770,14 @@ function startStattr() {
 	    }
             $ourTable = $resultTable.clone();
             $eventClone = $('tr.stattr-js-event-home-result-repeater', $ourTable).detach();
+	    delete i;
 	    for (var i in fieldList) {
 		$ourTr = $eventClone.clone();
 		$resClone = $('td.stattr-js-event-home-variable-repeatee', $ourTr).detach();
 		$ourTd = $varClone.clone();
 		$ourTd.html(fieldList[i]);
 		$ourTr.append($ourTd);
+		delete j;
 		for (var j in data.events[h][fieldList[i]]) {
 		    $ourTd = $resClone.clone();
 		    if (fieldList[i] == 'participants')
@@ -643,6 +788,7 @@ function startStattr() {
 		}
 		$ourTable.append($ourTr);
             }
+	    delete i;
 	    for (var i in boolList) {
 		$ourTr = $eventClone.clone();
 		$resClone = $('td.stattr-js-event-home-variable-repeatee', $ourTr).detach();
@@ -651,6 +797,7 @@ function startStattr() {
 		$ourTr.append($ourTd);
 		$ourTd = $resClone.clone();
 		$ourTd.attr('colspan', data.events[h].participants.length);
+		delete j;
 		for (var j in data.events[h].participants) {
 		    if (data.events[h][boolList[i]][j] === true) {
 			$ourTd.append(makeUserLink(data.events[h].participants[j]));
@@ -825,7 +972,7 @@ function startStattr() {
 		thisType = data.events[event].types[field];
 		thisName = data.events[event].fields[field];
 		if (thisName == 'participants') {
-		    $.noop();
+		    continue;
 		}
 		else if (thisType == 'bool') {
 		    $thisRow = $boolRow.clone();
@@ -846,7 +993,7 @@ function startStattr() {
 		    sortedList = [];
 		    total = 0;
 		    var median, mean;
-		    for (var i in data.results[event]) {
+		    for (i in data.results[event]) {
 			thisResult = data.results[event][i];
 			number = thisResult[thisName][thisResult.participants.indexOf(data.user.username)];
 			total += number;
@@ -888,7 +1035,7 @@ function startStattr() {
 		    $('.stattr-js-var-name', $thisRow).html(thisName);
 		    occurrences = {};
 		    order = [];
-		    for (var i in data.results[event]) {
+		    for (i in data.results[event]) {
 			thisResult = data.results[event][i];
 			thisStr = thisResult[thisName][thisResult.participants.indexOf(data.user.username)];
 			if (!occurrences[thisStr])
@@ -896,7 +1043,7 @@ function startStattr() {
 			else
 			    occurrences[thisStr]++;
 		    }
-		    for (var i in occurrences) {
+		    for (i in occurrences) {
 			j = 0;
 			while (order[j] && occurrences[i] > occurrences[order[j]])
 			    j++;

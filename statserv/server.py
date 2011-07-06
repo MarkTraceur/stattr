@@ -207,7 +207,7 @@ def start():
             return make_response(request.args.get('callback', ''),
                                  {'page': resultlist[start:start+10]})
         elif len(resultlist) <= 0 or wantresults == 'false':
-            return make_response(request.args.get('callback', ''),
+            return make_response(request.args.get('callback', ''),\
                                  {'table': tbldoc})
         else:
             return make_response(request.args.get('callback', ''),

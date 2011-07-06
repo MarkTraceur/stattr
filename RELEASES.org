@@ -31,13 +31,16 @@
 *** DONE 0.06
     CLOSED: [2011-06-03 Fri 15:46]
 - Client-side validation
-** TODO 0.1x
+** DONE 0.1x
+   CLOSED: [2011-07-06 Wed 16:44]
 *** DONE 0.10
     CLOSED: [2011-06-08 Wed 21:39]
 - User statistics
 - Profile pages
-*** TODO 0.11
-- Statistics page for events
+*** DONE 0.11
+    CLOSED: [2011-07-06 Wed 16:44]
+- Event averages
+- More statistics for event-wide consideration
 ** TODO 0.2x
 *** TODO 0.20
 - Sort users by statistics

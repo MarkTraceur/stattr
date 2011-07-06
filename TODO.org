@@ -1,5 +1,6 @@
 * Features
-** TODO User statistics and profile page :0.10:
+** DONE User statistics and profile page :0.10:
+   CLOSED: [2011-06-08 Wed 21:39]
 ** TODO Event averages and other statistical analyses for events :0.11:
 ** TODO Sort players by various fields :0.20:
 ** TODO Team groupings :0.21:
