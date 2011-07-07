@@ -5,9 +5,9 @@
 ** TODO Sort players by various fields :0.20:
 ** TODO Team groupings :0.21:
 ** TODO Graphing
-** TODO Tournament structures
+** TODO Tournament structures :0.30:
 * Modifications
 ** DONE More client-side input validation :0.06:
    CLOSED: [2011-06-05 Sun 02:32]
-** TODO Different layout for event home pages
+** TODO Different layout for event home pages :0.31:
 ** TODO Support for non-app-related web pages (custom HTML stuff)
