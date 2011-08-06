@@ -18,4 +18,4 @@
 
 import statserv.server
 
-stattr_server = statserv.server.start()
+statserv.server.start()
