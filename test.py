@@ -202,5 +202,49 @@ class UtilityFunctionTestCase(unittest.TestCase):
                           'admin priveleges when the session exists and the '\
                           'credentials are correct, but the user is non-admin.')
 
+class GETMethodsTestCase(unittest.TestCase):
+    def testIndexPage(self):
+        index_file = statserv.server.determine_path() + '/static/index.html'
+        self.assertEquals(open(index_file).read(),
+                     statserv.server.index_page(),
+                     'The index page doesn\'t get properly returned by the '\
+                     'index_page method, make sure it\'s still working.')
+
+    def testGetTpls(self):
+        app = Flask(__name__)
+        with app.test_client() as c:
+            testRequest = c.get('/tpls.json?which=asdfjdskfjs')
+            self.assertEquals(statserv.server.send_error(request,
+                                                         'template does'\
+                                                         ' not exist'),
+                         statserv.server.get_tpls(),
+                         'The get_tpls method really shouldn\'t try to send '\
+                         'back a template for \'asdfjdskfjs.\'')
+        tplsempty = False
+        with app.test_client() as c:
+            testRequest = c.get('/tpls.json?which=')
+            tplsempty = statserv.server.get_tpls()
+        with app.test_client() as c:
+            testRequest = c.get('/tpls.json?which=all')
+            self.assertEquals(statserv.server.get_tpls(),
+                              tplsempty,
+                              'The get_tpls method should send back all '\
+                              'templates on both which=all and which=.')
+        with app.test_client() as c:
+            testRequest = c.get('/tpls.json?callback=blah'\
+                                '&which=header&which=home')
+            header = open(statserv.server.determine_path()\
+                              + '/tpls/header.tpl').read()
+            home = open(statserv.server.determine_path()\
+                              + '/tpls/home.tpl').read()
+            response = statserv.server.make_response('blah', dict({'header':
+                                                                       header,
+                                                                   'home':
+                                                                       home}))
+            self.assertEquals(statserv.server.get_tpls(),
+                              response,
+                              'The single-template support does not seem to be '\
+                              'working properly.')
+
 if __name__ == '__main__':
     unittest.main()
