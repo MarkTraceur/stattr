@@ -344,7 +344,7 @@ function startStattr() {
 	
         $('input#stattr-js-event-create-submit').click(function() {
             activity = $('input#stattr-js-event-create-activity', stDat.$main).val();
-            officials = $('input#stattr-js-event-create-officials', stDat.$main).val();
+            officials = $('input#stattr-js-event-create-officials', stDat.$main).val().toLowerCase();
             descr = $('input#stattr-js-event-create-descr', stDat.$main).val();
             id = $('input#stattr-js-event-create-id', stDat.$main).val();
             variables = [];
@@ -385,7 +385,7 @@ function startStattr() {
                 stDat.$error.html('Passwords do not match!');
             else {
                 formDat = {
-                    'username': $('input#stattr-js-user-create-username').val(),
+                    'username': $('input#stattr-js-user-create-username').val().toLowerCase(),
                     'fullname': $('input#stattr-js-user-create-fullname').val(),
                     'profile': $('input#stattr-js-user-create-profile').val(),
                     'admin': $('input#stattr-js-user-create-admin').is(':checked'),
@@ -512,7 +512,7 @@ function startStattr() {
 
         $('input#stattr-js-event-modify-submit').click(function() {
             activity = $('input#stattr-js-event-modify-activity', stDat.$main).val();
-            officials = $('input#stattr-js-event-modify-officials', stDat.$main).val();
+            officials = $('input#stattr-js-event-modify-officials', stDat.$main).val().toLowerCase();
             descr = $('input#stattr-js-event-modify-descr', stDat.$main).val();
             id = $('input#stattr-js-event-modify-id', stDat.$main).val();
             variables = [];
@@ -825,10 +825,10 @@ function startStattr() {
 		    return true;
 		    break;
 		case 'int':
-		    typeregex = /[^0-9]/;
+		    typeregex = /[^0-9\-]/;
 		    break;
 		case 'double':
-		    typeregex = /[^0-9.]/;
+		    typeregex = /[^0-9.\-]/;
 		    break;
 		case 'varchar':
 		case 'text':
@@ -933,7 +933,7 @@ function startStattr() {
 		}
 		$('input.stattr-js-competitor-name', stDat.$main).each(function() {
 			$this = $(this);
-			results[0].push($this.val());
+			results[0].push($this.val().toLowerCase());
 			$('input.stattr-js-variable-value', $this.parent().parent()).each(function(index) {
 				if ($(this).attr('type') == 'checkbox')
 				    results[index+1].push($(this).is(':checked'));
