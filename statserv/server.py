@@ -136,7 +136,6 @@ def index_page():
 @stattr_server.route('/tpls.json')
 def get_tpls():
     which = request.args.getlist('which')
-    print which
     wset = set(which)
     tplset = set(tplList)
     if not wset.issubset(tplset) and 'all' not in which and which != ['']:
