@@ -125,6 +125,7 @@ class UtilityFunctionTestCase(unittest.TestCase):
         dbadmin = db.stattrusers.find_one({'username': 'admin'})
         del dbconf['_id']
         del dbadmin['_id']
+        conn.drop_database(dbname)
         self.assertEquals(dbconf, ourconf,
                           'The build_database method is broken. Somehow, '\
                           'the config we put in didn\'t come out the same when'\
@@ -245,6 +246,114 @@ class GETMethodsTestCase(unittest.TestCase):
                               response,
                               'The single-template support does not seem to be '\
                               'working properly.')
+    
+    def testGetConf(self):
+        conn = Connection()
+        dbname = 'test_db'
+        db = conn[dbname]
+        expected = dict({u'sitename': u'test',
+                         u'logo': u'http://imgur.com/123456.png',
+                         u'location': u'redlands, ca'})
+        db.stattrconf.insert(expected)
+        del expected['_id']
+        statserv.server.database = conn[dbname]
+        app = Flask(__name__)
+        with app.test_client() as c:
+            testRequest = c.get('/conf.json?callback=blah')
+            result = statserv.server.get_conf()
+            conn.drop_database(dbname)
+            self.assertEquals(statserv.server.make_response('blah', expected),
+                              result,
+                              'The get_conf method is broken, it did not '\
+                              'return what we put in.')
+
+    def testGetEvents(self):
+        app = Flask(__name__)
+        conn = Connection()
+        dbname = 'test_db'
+        db = conn[dbname]
+        expected1 = dict({'id': 'test01',
+                          'activity': 'test',
+                          'descr': 'Test description.'})
+        expected2 = dict({'id': 'test02',
+                          'activity': 'test',
+                          'descr': 'Another test.'})
+        db.stattrtbls.insert(expected1)
+        db.stattrtbls.insert(expected2)
+        del expected1['_id']
+        del expected2['_id']
+        with app.test_client() as c:
+            testRequest = c.get('/events.json?callback=blah')
+            expected = dict({'events': [expected1, expected2]})
+            statserv.server.database = conn[dbname]
+            self.assertEquals(statserv.server.make_response('blah', expected),
+                              statserv.server.get_events(),
+                              'The get_events method is not properly returning '\
+                              'events that we added manually.')
+
+    def testGetEvent(self):
+        app = Flask(__name__)
+        conn = Connection()
+        dbname = 'test_db'
+        db = conn[dbname]
+        with app.test_client() as c:
+            testRequest = c.get('/event.json?callback=blah')
+            self.assertEquals(statserv.server.send_error(request,
+                                                         'need to know what'\
+                                                         ' event you want to '\
+                                                         'complete this'\
+                                                         ' request'),
+                              statserv.server.get_event(),
+                              'The get_event method needs to error out if '\
+                              'no event id is passed to it.')
+        
+        with app.test_client() as c:
+            statserv.server.database = conn[dbname]
+            testRequest = c.get('/event.json?callback=blah&id=test2011')
+            expected = statserv.server.send_error(request,
+                                  'that event does not seem to exist....')
+            self.assertEquals(expected, statserv.server.get_event(),
+                              'The get_event method should error out if '\
+                              'the requested event doesn\'t exist.')
+
+        with app.test_client() as c:
+            statserv.server.database = conn[dbname]
+            expectdict = dict({'id': 'test2011',
+                               'descr': 'Testing stuff'})
+            db.stattrtbls.insert(expectdict)
+            testRequest = c.get('/event.json?callback=blah'\
+                                '&id=test2011&results=false')
+            del expectdict['_id']
+            expected = statserv.server.make_response('blah',
+                                                     dict({'table': expectdict}))
+            actual = statserv.server.get_event()
+            db.stattrtbls.remove({})
+            self.assertEquals(expected, actual,
+                              'The server should not return results from the '\
+                              'get_event method when results=false.')
+
+        with app.test_client() as c:
+            testRequest = c.get('/event.json?callback=blah'\
+                                '&id=test2011')
+            expecttbl = dict({u'id': u'test2011',
+                               u'descr': u'Testing stuff'})
+            db.stattrtbls.insert(expecttbl)
+            expectres = dict({u'participants': [u'test1', u'test2'],
+                              u'score': [22, 25],
+                              u'victory': [False, True]})
+            db['test2011'].insert(expectres)
+            del expectres['_id']
+            del expecttbl['_id']
+            expectdict = dict({'events': [expectres],
+                               'table': expecttbl})
+            expected = statserv.server.make_response('blah', expectdict)
+            statserv.server.database = conn[dbname]
+            actual = statserv.server.get_event()
+            db.stattrtbls.remove({})
+            db.drop_collection('test2011')
+            self.assertEquals(expected, actual,
+                              'The get_event method somehow returned something '\
+                              'different from what we explicitly gave it.')
 
 if __name__ == '__main__':
     unittest.main()
