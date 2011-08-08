@@ -79,6 +79,9 @@ def build_database(db, conf):
                         'profile': ''})
 
 def make_session(username, hostname, admin):
+    if hostname == None:
+        # We're probably in a test environment, or something is screwy.
+        hostname = '127.0.0.1'
     idNum = hashlib.sha1(username + hostname + \
                          str(random.random())).hexdigest()
     sessions[idNum] = (username, hostname, admin)

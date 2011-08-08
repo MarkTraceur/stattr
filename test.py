@@ -204,6 +204,9 @@ class UtilityFunctionTestCase(unittest.TestCase):
                           'credentials are correct, but the user is non-admin.')
 
 class GETMethodsTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
     def testIndexPage(self):
         index_file = statserv.server.determine_path() + '/static/index.html'
         self.assertEquals(open(index_file).read(),
@@ -354,6 +357,165 @@ class GETMethodsTestCase(unittest.TestCase):
             self.assertEquals(expected, actual,
                               'The get_event method somehow returned something '\
                               'different from what we explicitly gave it.')
+
+    def testGetUsers(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            testRequest = c.get('/users.json?_username=test&_session=1234'\
+                                '&callback=blah')
+            statserv.server.sessions['1234'] = ('test', request.remote_addr, True)
+            statserv.server.config['adminuser'] = 'admin'
+            db = conn['test_db']
+            adminuser = {u'username': u'admin', u'password': 'password',
+                         u'profile': ''}
+            otherusers = [{u'username': u'other', u'password': 'asdf',
+                           u'profile': u'The first other user'},
+                          {u'username': u'other_two', u'password': 'aoeu',
+                           u'profile': u'The other other user'}]
+            db.stattrusers.insert(adminuser)
+            db.stattrusers.insert(otherusers[0])
+            db.stattrusers.insert(otherusers[1])
+            statserv.server.database = conn['test_db']
+            del otherusers[0]['_id']
+            del otherusers[1]['_id']
+            del otherusers[0]['password']
+            del otherusers[1]['password']
+            expected = statserv.server.make_response('blah',
+                                                     {'users': otherusers})
+            actual = statserv.server.get_users()
+            conn.drop_database('test_db')
+            self.assertEquals(actual, expected,
+                              'The get_users method returned something other '\
+                              'than what we expected. Expected: `%s`, Actual: '\
+                              '`%s`' % (expected, actual))
+
+    def testGetUser(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            testRequest = c.get('/user.json?_username=test&_session=1234'\
+                                '&callback=blah&username=test')
+            statserv.server.sessions['1234'] = ('test', request.remote_addr, True)
+            db = conn['test_db']
+            user = {'username': 'test', 'profile': 'asdf',
+                    'fullname': 'Testy', 'password': 'password'}
+            db.stattrusers.insert(user)
+            del user['_id']
+            del user['password']
+            statserv.server.database = conn['test_db']
+            expected = statserv.server.make_response('blah', user)
+            actual = statserv.server.get_user()
+            conn.drop_database('test_db')
+            self.assertEquals(actual, expected,
+                              'The get_user method returned something other '\
+                              'than what we expected. Expected: `%s`, '\
+                              'Actual: `%s`' % (expected, actual))
+
+    def testGetProfile(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            testRequest = c.get('/profile.json?username=test&callback=blah')
+            db = conn.test_db
+            tablecol = db.stattrtbls
+            usercol = db.stattrusers
+            event = {'id': 'testing123',
+                     'fields': ['participants', 'score', 'victory'],
+                     'descr': 'Testing a whole bunch of stuff.',
+                     'types': ['varchar', 'int', 'bool'],
+                     'activity': 'testing'
+                     }
+            results = [{'participants': ['test1', 'test2'],
+                        'score': [1, 2],
+                        'victory': [False, True]},
+                       {'participants': ['test1', 'test'],
+                        'score': [3, 1],
+                        'victory': [True, False]}]
+            user = {'username': 'test', 'profile': 'tests a lot',
+                    'password': 'reallyreallysecurepassword'}
+            db.stattrusers.insert(user)
+            db.stattrtbls.insert(event)
+            db.testing123.insert(results[0])
+            db.testing123.insert(results[1])
+            del user['_id']
+            del user['password']
+            del event['_id']
+            del results[0]
+            del results[0]['_id']
+            del event['id']
+            # Gods of Python, I apologize for the below travesty. For whatever
+            # reason, the way the dictionaries are being converted to strings
+            # is not consistent. This is necessary to my test suite.
+            expected = 'blah({"events": {"testing123": {"fields": '\
+                       '["participants", "score", "victory"], "descr": '\
+                       '"Testing a whole bunch of stuff.", "types": ["varchar",'\
+                       ' "int", "bool"], "activity": "testing"}}, "user": '\
+                       '{"username": "test", "profile": "tests a lot"}, '\
+                       '"results": {"testing123": [{"participants": ["test1", '\
+                       '"test"], "score": [3, 1], "victory": [true, false]}]}});'
+            statserv.server.database = conn.test_db
+            actual = statserv.server.get_profile()
+            self.assertEquals(expected, actual,
+                              'The get_profile method returned something we '\
+                              'didn\'t expect. Expected: `%s`, '\
+                              'actual: `%s`.' % (expected, actual))
+
+    def tearDown(self):
+        conn = Connection()
+        conn.drop_database('test_db')
+
+
+class POSTMethodsTestCase(unittest.TestCase):
+    # You know how the last test class was really, really long?
+    # This one looks like it will be even longer.
+    def setUp(self):
+        pass
+
+    def testLogin(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            hashedpass = hashlib.sha1('testpass').hexdigest()
+            testRequest = c.get('/login.json?username=test&callback=blah&_method'\
+                                '=POST&password=%s' % hashedpass)
+            db = conn.test_db
+            db.stattrusers.insert({'username': 'test',
+                                   'admin': False,
+                                   'password': hashedpass})
+            statserv.server.database = conn.test_db
+            info = statserv.server.login()
+            sessionid = info.split('"session": "')[1][:40]
+            expected = ('test', '127.0.0.1', False)
+            actual = statserv.server.sessions[sessionid]
+            self.assertEquals(expected, actual,
+                              'The session created by the login method was '\
+                              'not what we expected. Expected: `%s`, actual: '\
+                              '`%s`.' % (expected, actual))
+    
+    def testAddEvent(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            testRequest = c.get('/event.json?activity=testing'\
+                                '&variables=victory&types='\
+                                'bool&officials=tester&descr=testing%20stuff&'\
+                                'id=testing123&_username=tester&_session=1234')
+            expected = {'activity': 'testing', 'descr': 'testing stuff',
+                        'fields': ['participants', 'victory'],
+                        'types': ['varchar', 'bool'], 'officials': ['tester'],
+                        'id': 'testing123', 'rstarts': [], 'checks': [],
+                        'rends': []}
+            db = conn.test_db
+            statserv.server.database = conn.test_db
+            statserv.server.sessions['1234'] = ('tester', None, True)
+            statserv.server.add_event(request)
+            actual = db.stattrtbls.find_one({})
+            del actual['_id']
+            self.assertEquals(expected, actual,
+                              'The add_event method added something other than '\
+                              'what we expected. Expected: `%s`, '\
+                              'actual: `%s`.' % (expected, actual))
 
 if __name__ == '__main__':
     unittest.main()
