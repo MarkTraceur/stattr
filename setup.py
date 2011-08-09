@@ -1,9 +1,9 @@
-#!/usr/bin/python
+B1;2600;0c#!/usr/bin/python
 
 from distutils.core import setup
 
 setup(name='stattr',
-      version='0.12',
+      version='0.13',
       description='A web application for tracking competitive activities',
       author='Mark Holmquist',
       author_email='marktraceur@gmail.com',
