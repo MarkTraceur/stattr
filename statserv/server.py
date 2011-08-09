@@ -395,7 +395,6 @@ def add_results():
         eventcol = database[event]
         results = dict([(fieldname, field.split(','))\
                         for fieldname, field in zip(fields, results)])
-        print results, types
         while 'bool' in types:
             ouri = types.index('bool')
             types[ouri] = 'done'
@@ -468,14 +467,13 @@ def mod_event(request):
                           'event already exists, create a unique ID')
 
 def mod_user(request):
-    if username == ''\
-       or session == '':
-        return send_error(request, 'need to be logged in to add results')
-    elif not session in sessions\
-         or sessions[session][0] != username\
-         or sessions[session][1] != request.remote_addr:
-        return send_error(request,
-                          'session data does not match query string')
+    auth = check_auth(request.args.get('_username'),
+                      request.remote_addr,
+                      request.args.get('_session'),
+                      needadmin=True)
+    if 'error' in auth:
+        return send_error(request, auth['error'])
+
     olduser = request.args.get('olduser', '')
     username = request.args.get('username', '')
     password = request.args.get('password', '')

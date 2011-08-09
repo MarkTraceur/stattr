@@ -460,6 +460,7 @@ class GETMethodsTestCase(unittest.TestCase):
                               'The get_profile method returned something we '\
                               'didn\'t expect. Expected: `%s`, '\
                               'actual: `%s`.' % (expected, actual))
+            conn.drop_database('test_db')
 
     def tearDown(self):
         conn = Connection()
@@ -492,6 +493,7 @@ class POSTMethodsTestCase(unittest.TestCase):
                               'The session created by the login method was '\
                               'not what we expected. Expected: `%s`, actual: '\
                               '`%s`.' % (expected, actual))
+            conn.drop_database('test_db')
     
     def testAddEvent(self):
         app = Flask(__name__)
@@ -516,6 +518,119 @@ class POSTMethodsTestCase(unittest.TestCase):
                               'The add_event method added something other than '\
                               'what we expected. Expected: `%s`, '\
                               'actual: `%s`.' % (expected, actual))
+            conn.drop_database('test_db')
+
+    def testAddUser(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            hashedpassword = hashlib.sha1('test').hexdigest()
+            testRequest = c.get('/user.json?_method=POST&_username=tester&'\
+                                '_session=1234&username=test1&password=%s&'\
+                                'fullname=tester&admin=false' % hashedpassword)
+            db = conn.test_db
+            user = {'username': 'test1',
+                    'password': hashedpassword,
+                    'fullname': 'tester',
+                    'admin': False,
+                    'profile': ''}
+            statserv.server.sessions['1234'] = ('tester', None, True)
+            statserv.server.database = conn.test_db
+            statserv.server.add_user(request)
+            actual = db.stattrusers.find_one({})
+            del actual['_id']
+            self.assertEquals(user, actual,
+                              'The add_user method did something we didn\'t '\
+                              'expect. Expected: `%s`, actual: `%s`.'\
+                              % (user, actual))
+            conn.drop_database('test_db')
+
+    def testAddResults(self): 
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            testRequest = c.get('/results.json?_username=tester&_session=1234&'\
+                                '_method=POST&results=tester&results=true&'\
+                                'event=testing123')
+            event = {'id': 'testing123', 'fields': ['participants', 'victory'],
+                     'types': ['varchar', 'bool']}
+            db = conn.test_db
+            db.stattrtbls.insert(event)
+            del event['_id']
+            result = {'participants': ['tester'], 'victory': [True]}
+            statserv.server.sessions['1234'] = ('tester', None, True)
+            statserv.server.database = conn.test_db
+            statserv.server.add_results()
+            actual = db.testing123.find_one({})
+            del actual['_id']
+            self.assertEquals(result, actual,
+                              'The add_results method did something we didn\'t '\
+                              'expect. Expected: `%s`, actual: `%s`.'\
+                              % (result, actual))
+            conn.drop_database('test_db')
+
+    def tearDown(self):
+        conn = Connection()
+        conn.drop_database('test_db')
+
+class PUTMethodsTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def testModEvent(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            testRequest = c.get('/event.json?_username=tester&_session=1234&'\
+                                '_method=PUT&activity=testing&variables=score&'\
+                                'types=int&officials=tester&oldid=testing122&'\
+                                'descr=testing%20stuff&id=testing123')
+            event = {'id': 'testing122', 'activity': 'testing',
+                     'officials': ['tester'], 'descr': 'testing stuff',
+                     'fields': ['participants', 'score'], 'rends': [],
+                     'types': ['varchar', 'int'], 'rstarts': [], 'checks': []}
+            statserv.server.sessions['1234'] = ('tester', None, True)
+            statserv.server.database = conn.test_db
+            db = conn.test_db
+            db.stattrtbls.insert(event)
+            del event['_id']
+            event['id'] = 'testing123'
+            statserv.server.mod_event(request)
+            actual = db.stattrtbls.find_one({})
+            del actual['_id']
+            self.assertEquals(event, actual,
+                              'The mod_event method did something we didn\'t '\
+                              'expect. Expected: `%s`, actual: `%s`.'\
+                              % (event, actual))
+            conn.drop_database('test_db')
+
+    def testModUser(self):
+        app = Flask(__name__)
+        conn = Connection()
+        with app.test_client() as c:
+            testRequest = c.get('/user.json?_username=tester&_session=1234&'\
+                                '_method=PUT&username=test2&fullname=tester&'\
+                                'admin=false&olduser=test1&profile=asdf')
+            user = {'username': 'test1', 'fullname': 'tester', 'admin': False,
+                    'profile': 'asdf', 'password': '1234'}
+            db = conn.test_db
+            db.stattrusers.insert(user)
+            del user['_id']
+            user['username'] = 'test2'
+            statserv.server.sessions['1234'] = ('tester', None, True)
+            statserv.server.database = conn.test_db
+            statserv.server.mod_user(request)
+            actual = db.stattrusers.find_one({})
+            del actual['_id']
+            self.assertEquals(user, actual,
+                              'The mod_user method did something we didn\'t '\
+                              'expect. Expected: `%s`, actual: `%s`.'\
+                              % (user, actual))
+            conn.drop_database('test_db')
+
+    def tearDown(self):
+        conn = Connection()
+        conn.drop_database('test_db')
 
 if __name__ == '__main__':
     unittest.main()
