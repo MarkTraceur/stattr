@@ -31,7 +31,8 @@
 *** DONE 0.06
     CLOSED: [2011-06-03 Fri 15:46]
 - Client-side validation
-** 0.1x
+** DONE 0.1x
+   CLOSED: [2011-08-08 Mon 18:02]
 *** DONE 0.10
     CLOSED: [2011-06-08 Wed 21:39]
 - User statistics
@@ -43,7 +44,8 @@
 *** DONE 0.12
     CLOSED: [2011-08-08 Mon 17:49]
 - Test suite
-*** TODO 0.13
+*** DONE 0.13
+    CLOSED: [2011-08-08 Mon 18:02]
 - Install script
 ** TODO 0.2x
 *** TODO 0.20
