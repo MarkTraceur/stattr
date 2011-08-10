@@ -1,0 +1,2 @@
+include statserv/stattrd.conf
+recursive-include statserv *.tpl *.html *.js *.css

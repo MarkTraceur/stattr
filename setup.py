@@ -1,4 +1,4 @@
-B1;2600;0c#!/usr/bin/python
+#!/usr/bin/python
 
 from distutils.core import setup
 
