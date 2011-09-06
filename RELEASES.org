@@ -52,8 +52,11 @@
 - Sort users by statistics
 *** TODO 0.21
 - Team groupings
+*** TODO 0.22
+- Migrate to the Flask way of sesion management
 ** TODO 0.3x
 *** TODO 0.30
 - Tournament structures
 *** TODO 0.31
 - Change layout for event home pages
+
